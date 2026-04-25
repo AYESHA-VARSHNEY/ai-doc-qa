@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+coverage.xml
+.coverage
+htmlcov/
+node_modules/
+build/
+dist/
+*.egg-info/
+.DS_Store
+/tmp/uploads/
