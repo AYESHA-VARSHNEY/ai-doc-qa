@@ -9,7 +9,7 @@ A full-stack AI-powered web application that allows users to upload PDF document
 ### Register with your API Key
 ![Register](screenshots/register.png)
 
-###Login Page
+### Login Page
 ![Login](screenshots/login.png)
 
 ### Upload a PDF
