@@ -7,25 +7,28 @@ A full-stack AI-powered web application that allows users to upload PDF document
 ## 📸 Screenshots
 
 ### Register with your API Key
-![Register](screenshots/01_register.png)
+![Register](screenshots/register.png)
+
+###Login Page
+![Login](screenshots/login.png)
 
 ### Upload a PDF
-![Upload](screenshots/03_pdf_upload.png)
+![Upload](screenshots/pdf_upload.png)
 
 ### Chat with your Document
-![Chat](screenshots/04_chat_question.png)
+![Chat](screenshots/chat_question.png)
 
 ### Generate Summary
-![Summary](screenshots/05_summary.png)
+![Summary](screenshots/summary.png)
 
 ### Video Upload & Summary
-![Video](screenshots/06_video_upload.png)
+![Video](screenshots/video_upload.png)
 
 ### API Documentation (Swagger)
-![API Docs](screenshots/07_swagger_api.png)
+![API Docs](screenshots/swagger_api.png)
 
 ### Docker Containers Running
-![Docker](screenshots/08_docker.png)
+![Docker](screenshots/docker.png)
 
 ---
 
