@@ -16,6 +16,8 @@ async def chat(req: ChatRequest, user: str = Depends(get_current_user), x_openai
     if not x_openai_key:
         raise HTTPException(400, "API key missing.")
     meta = await get_file_metadata(req.file_id)
+    if not meta:
+         raise HTTPException(404, "File not found")
     answer = query_document(req.file_id, req.question, api_key=x_openai_key)
     timestamp = None
     if meta and meta.get("segments"):

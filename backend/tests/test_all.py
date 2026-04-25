@@ -116,7 +116,8 @@ async def test_chat_with_timestamp(ac):
     token = await get_token(ac)
     headers = {"Authorization": f"Bearer {token}", "X-OpenAI-Key": "sk-test"}
     segments = [{"start": 5.0, "end": 10.0, "text": "The answer is found here"}]
-    mock_meta = {"_id": "fid2", "file_name": "vid.mp4", "file_type": "video", "text": "The answer is found here", "segments": segments}
+    mock_meta = {"_id": "fid2", "file_name": "vid.mp4", "file_type": "video",
+                 "text": "The answer is found here", "segments": segments}
     with patch("routers.chat.get_file_metadata", new_callable=AsyncMock, return_value=mock_meta), \
          patch("routers.chat.query_document", return_value="The answer is found here"):
         r = await ac.post("/chat/", json={"file_id": "fid2", "question": "answer?"}, headers=headers)
@@ -127,7 +128,8 @@ async def test_chat_with_timestamp(ac):
 async def test_summary_success(ac):
     token = await get_token(ac)
     headers = {"Authorization": f"Bearer {token}", "X-OpenAI-Key": "sk-test"}
-    mock_meta = {"_id": "fid3", "file_name": "doc.pdf", "file_type": "pdf", "text": "Long content here", "segments": []}
+    mock_meta = {"_id": "fid3", "file_name": "doc.pdf", "file_type": "pdf",
+                 "text": "Long content here", "segments": []}
     with patch("routers.summary.get_file_metadata", new_callable=AsyncMock, return_value=mock_meta), \
          patch("routers.summary.summarize_text", return_value="• Point 1\n• Point 2"):
         r = await ac.post("/summary/", json={"file_id": "fid3"}, headers=headers)
@@ -149,31 +151,53 @@ async def test_summary_no_key(ac):
     r = await ac.post("/summary/", json={"file_id": "fid3"}, headers=headers)
     assert r.status_code == 400
 
-def test_index_and_query():
+# LLM Service tests — litellm mock
+def test_index_text():
     with patch("services.llm_service.FAISS") as mock_faiss, \
-         patch("services.llm_service.RetrievalQA") as mock_qa, \
-         patch("services.llm_service.OpenAIEmbeddings"):
+         patch("services.llm_service.DeterministicFakeEmbedding"):
         mock_vs = MagicMock()
         mock_faiss.from_documents.return_value = mock_vs
-        mock_qa.from_chain_type.return_value.invoke.return_value = {"result": "42"}
-        from services.llm_service import index_text, query_document
-        index_text("t1", "some text to index", api_key="sk-test")
-        result = query_document("t1", "what?", api_key="sk-test")
-        assert result == "42"
+        from services.llm_service import index_text, vector_stores
+        index_text("tid1", "some sample text", api_key="gsk_test")
+        assert "tid1" in vector_stores
 
 def test_query_not_indexed():
     from services.llm_service import query_document
     result = query_document("nonexistent_id_xyz", "question?")
     assert "not indexed" in result.lower()
 
+def test_query_document():
+    with patch("services.llm_service.litellm.completion") as mock_completion, \
+         patch("services.llm_service.FAISS") as mock_faiss, \
+         patch("services.llm_service.DeterministicFakeEmbedding"):
+        mock_vs = MagicMock()
+        mock_vs.similarity_search.return_value = [MagicMock(page_content="context text")]
+        mock_faiss.from_documents.return_value = mock_vs
+        mock_completion.return_value = MagicMock(
+            choices=[MagicMock(message=MagicMock(content="Test answer"))]
+        )
+        from services.llm_service import index_text, query_document
+        index_text("tid2", "some text", api_key="sk-test")
+        result = query_document("tid2", "what?", api_key="sk-test")
+        assert result == "Test answer"
+
 def test_summarize_text():
-    with patch("services.llm_service.ChatOpenAI") as mock_llm_cls:
-        mock_llm = MagicMock()
-        mock_llm.invoke.return_value = MagicMock(content="• Summary point")
-        mock_llm_cls.return_value = mock_llm
+    with patch("services.llm_service.litellm.completion") as mock_completion:
+        mock_completion.return_value = MagicMock(
+            choices=[MagicMock(message=MagicMock(content="• Summary point"))]
+        )
         from services.llm_service import summarize_text
         result = summarize_text("Some long text", api_key="sk-test")
         assert "Summary" in result
+
+def test_detect_provider():
+    from services.llm_service import get_model_and_provider
+    model, _ = get_model_and_provider("gsk_test")
+    assert "groq" in model
+    model2, _ = get_model_and_provider("AIzatest")
+    assert "gemini" in model2
+    model3, _ = get_model_and_provider("sk-test")
+    assert "gpt" in model3
 
 def test_find_timestamp():
     from services.transcription_service import find_timestamp_for_answer
